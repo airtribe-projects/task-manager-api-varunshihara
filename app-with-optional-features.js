@@ -5,17 +5,8 @@ const port = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let tasks = [
-  {
-    id: 1,
-    title: "Set up environment",
-    description: "Install Node.js, npm, and git",
-    completed: true,
-    priority: "low",
-    createdAt: new Date().toISOString(),
-  },
-];
-let nextId = 2;
+let tasks = [];
+let nextId = 1;
 
 // GET /tasks : Retrieve all tasks, with optional filtering and sorting
 app.get("/tasks", (req, res) => {
@@ -59,21 +50,18 @@ app.post("/tasks", (req, res) => {
     typeof title !== "string" ||
     typeof description !== "string" ||
     typeof completed !== "boolean" ||
+    !["low", "medium", "high"].includes((priority || "").toLowerCase()) ||
     title.trim() === "" ||
     description.trim() === ""
   ) {
     return res.status(400).json({ error: "Invalid task data" });
-  }
-  let taskPriority = priority ? priority.toLowerCase() : "low";
-  if (!["low", "medium", "high"].includes(taskPriority)) {
-    taskPriority = "low";
   }
   const task = {
     id: nextId++,
     title,
     description,
     completed,
-    priority: taskPriority,
+    priority: priority.toLowerCase(),
     createdAt: new Date().toISOString(),
   };
   tasks.push(task);
@@ -89,18 +77,15 @@ app.put("/tasks/:id", (req, res) => {
   if (
     typeof title !== "string" ||
     typeof description !== "string" ||
-    typeof completed !== "boolean"
+    typeof completed !== "boolean" ||
+    !["low", "medium", "high"].includes((priority || "").toLowerCase())
   ) {
     return res.status(400).json({ error: "Invalid task data" });
-  }
-  let taskPriority = priority ? priority.toLowerCase() : "low";
-  if (!["low", "medium", "high"].includes(taskPriority)) {
-    taskPriority = "low";
   }
   task.title = title;
   task.description = description;
   task.completed = completed;
-  task.priority = taskPriority;
+  task.priority = priority.toLowerCase();
   res.json(task);
 });
 
@@ -109,7 +94,7 @@ app.delete("/tasks/:id", (req, res) => {
   const index = tasks.findIndex((t) => t.id === parseInt(req.params.id));
   if (index === -1) return res.status(404).json({ error: "Task not found" });
   tasks.splice(index, 1);
-  res.status(200).json({ error: false, message: "Task deleted successfully" });
+  res.status(204).json({ error: false, message: "Task deleted successfully" });
 });
 
 app.listen(port, (err) => {
